@@ -1,0 +1,104 @@
+﻿<script>
+    const PORT_CLIENTES = window.location.port !== "" ? `:${window.location.port}` : "";
+    const URL_BASE_CLIENTES = `${window.location.protocol}//${window.location.hostname}${PORT_CLIENTES}/api`;
+
+    async function AgregarCliente(clienteToSend) {
+        try {
+            const respuesta = await fetch(URL_BASE_CLIENTES + "/clientes/crear", {
+                method: "POST",
+                body: JSON.stringify(clienteToSend),
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            });
+
+            if (respuesta.ok) {
+                await Swal.fire(
+                    'Hecho!',
+                    'El nuevo cliente fue creado con exito',
+                    'success'
+                )
+            } else {
+                await Swal.fire(
+                    'Error',
+                    JSON.stringify(await respuesta.json()),
+                    'error'
+                )
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function obtenerClientes() {
+        try {
+            const respuesta = await fetch(URL_BASE_CLIENTES + "/clientes", {
+                method: "GET",
+            });
+
+            if (respuesta.ok) {
+                const resultados = await respuesta.json();
+                return resultados;
+            } else {
+                window.alert("La solicitud para obtener la lista de clientes no fue exitosa");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function obtenerCliente(clienteId) {
+        try {
+            const response = await fetch(URL_BASE_CLIENTES + "/clientes/" + clienteId, {
+                method: "GET",
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return result;
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function editarClienteAsync(toSend) {
+        try {
+            const respuesta = await fetch(URL_BASE_CLIENTES + "/clientes/editar", {
+                method: "PUT",
+                body: JSON.stringify(toSend),
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            });
+
+            if (respuesta.ok) {
+                await Swal.fire(
+                    'Hecho!',
+                    'Los datos del cliente fueron modificados con exito',
+                    'success'
+                )
+            } else {
+                await Swal.fire(
+                    'Error',
+                    JSON.stringify(await respuesta.json()),
+                    'error'
+                )
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function rellenarElementoSelect(clientes) {
+        const selectElement = document.getElementById("selectElement");
+
+        clientes.map((cliente, index) => {
+            const optionElement = document.createElement("option");
+            optionElement.value = cliente.id;
+            optionElement.text = cliente.nombre;
+            selectElement.appendChild(optionElement);
+        });
+    }
+
+</script>

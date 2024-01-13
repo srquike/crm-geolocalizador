@@ -1,0 +1,7 @@
+﻿@if (ViewData["error_mensaje_salir"] is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">Ocurri&oacute; un error</h4>
+        <p>@ViewData["error_mensaje_salir"]</p>
+    </div>
+}

@@ -1,0 +1,87 @@
+﻿@using LevantamientoDeRed.Dto;
+@using Microsoft.AspNetCore.Identity;
+@model CambiarClaveUsuarioDto
+
+@{
+    ViewData["Title"] = "Cambiar contrase&ntilde;a";
+}
+
+<div class="bg-secondary">
+    <div id="layoutAuthentication">
+        <div id="layoutAuthentication_content">
+            <main>
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-7">
+                            <div class="card shadow-lg border-0 rounded-lg mt-5 mb-5">
+                                <div class="card-header">
+                                    <h3 class="text-center font-weight-light my-4">Cambiar contrase&ntilde;a</h3>
+                                    @if (ViewData["error_mensaje_cambiarclave"] is not null)
+                                    {
+                                        <div class="alert alert-danger" role="alert">
+                                            <h4 class="alert-heading">Ocurri&oacute; un error</h4>
+                                            <p>@ViewData["error_mensaje_cambiarclave"]</p>
+                                            @if (ViewData["error_errores_cambiarclave"] is not null)
+                                            {
+                                                <hr>
+                                                <ul>
+                                                    @foreach (var item in ViewData["error_errores_cambiarclave"] as IEnumerable<IdentityError>)
+                                                    {
+                                                        <li class="mb-0">@item.Description</li>
+                                                    }
+                                                </ul>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                                <div class="card-body">
+                                    <form asp-action="CambiarClave" asp-controller="Usuarios">
+                                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                                        <input type="hidden" asp-for="Id" />
+                                        <div class="row">
+                                            <div class="form-floating">
+                                                <ul>
+                                                    <li>La contrase&ntilde;a debe tener almenos 1 n&uacute;mero.</li>
+                                                    <li>La contrase&ntilde;a debe tener almenos 6 car&aacute;cteres y un m&aacute;ximo de 10.</li>
+                                                    <li>La contrase&ntilde;a debe contener letras min&uacute;sculas y opcionalmente may&uacute;sculas y car&aacute;cteres especiales.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3 mb-md-0">
+                                                    <input asp-for="Clave" maxlength="10" class="form-control" id="inputPassword" type="password" placeholder="Crear contrase&ntilde;a" />
+                                                    <label asp-for="Clave">Contrase&ntilde;a</label>
+                                                    <span asp-validation-for="Clave" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3 mb-md-0">
+                                                    <input asp-for="ConfirmarClave" maxlength="10" class="form-control" id="inputPasswordConfirm" type="password" placeholder="Confirmar contrase&ntilde;a" />
+                                                    <label asp-for="ConfirmarClave">Confirmar contrase&ntilde;a</label>
+                                                    <span asp-validation-for="ConfirmarClave" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4">
+                                            <div class="d-grid gap-2 d-md-block">
+                                                <input type="submit" value="Guardar cambios" class="btn btn-primary btn-block">
+                                                <a asp-action="Index" asp-controller="Usuarios" class="btn btn-secondary btn-block">Volver</a>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

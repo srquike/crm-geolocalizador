@@ -1,0 +1,195 @@
+﻿@{
+    ViewData["Title"] = "Crear cable ";
+}
+
+<div class="container-fluid px-4" style="display: grid">
+    <h1 class="mt-4">Crear cable </h1>
+
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li>
+        <li class="breadcrumb-item"><a href="/Cables">Cables</a></li>
+        <li class="breadcrumb-item active">Crear </li>
+    </ol>
+
+    <div class="btn-group mb-4" role="group">
+        <input type="checkbox" class="btn-check" id="drawLinesCheckbox" autocomplete="off">
+        <label class="btn btn-outline-primary" for="drawLinesCheckbox" id="drawLinesCheckboxLabel">Dibujar</label>
+    </div>
+
+    <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+        <button type="button" id="btnGuardaCable" class="btn btn-success" disabled>Guardar</button>
+        <button onclick="deleteLastPolyline()" class="btn btn-danger">Eliminar &uacute;ltima línea</button>
+    </div>
+
+    <div class="form-floating mb-4">
+        <select id="colorSelected" class="form-select" onchange="obtenerColorSeleccionado()">
+            
+        </select>
+        <label for="colorSelected">Seleccionar</label>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Mapa de cables
+        </div>
+        <div class="card-body">
+            <div id="map" style="height: 500px"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_GoogleMapsScriptsPartial");
+        await Html.RenderPartialAsync("_CablesControllerScriptsPartial");
+    }
+
+    <script>
+        let map;
+        let lineCoordinates = []; // Almacena las coordenadas de la línea
+        let drawEnabled = false; // Variable para habilitar/deshabilitar el dibujo
+        let lastDrawnPolyline = null; // Almacena la última línea dibujada
+        const drawnPolylines = [];
+        
+        var colores = ['Azul', 'Naranja', 'Verde', 'Café', 'Gris', 'Blanco', 'Rojo', 'Negro', 'Amarillo', 'Violeta', 'Rosa', 'Aqua'];
+        var codigoHexadecimal = '#0000FF';
+
+        async function initMap() {
+            const position = { lat: 13.924394865271614, lng: -89.849635478908 };
+            const { Map } = await google.maps.importLibrary("maps");
+
+            map = new Map(document.getElementById("map"), {
+                zoom: 15,
+                center: position,
+                mapId: "DEMO_MAP_ID",
+            });
+
+            const drawLinesCheckbox = document.getElementById("drawLinesCheckbox");
+            const drawLinesCheckboxLabel = document.getElementById("drawLinesCheckboxLabel");
+            const btnGuardarCable = document.getElementById("btnGuardaCable");
+            
+
+            drawLinesCheckbox.addEventListener("change", () => {
+                drawEnabled = drawLinesCheckbox.checked;
+
+                if (drawEnabled) {
+                    drawLinesCheckboxLabel.innerHTML = "Dejar de dibujar"; // Cambiar el texto del botón
+                    btnGuardarCable.disabled = true;
+                } else {
+                    saveLastDrawnPolyline(); // Al desactivar, guardar la línea dibujada
+                    drawLinesCheckboxLabel.innerHTML = "Dibujar"; // Cambiar el texto del botón
+                    btnGuardarCable.disabled = false;
+                }
+            });
+
+            btnGuardarCable.addEventListener("click", async () => {
+                const { value: nombre } = await Swal.fire({
+                    title: 'Ingrese el nombre del cable',
+                    input: 'text',
+                    inputLabel: 'Nombre',
+                    showCancelButton: true,
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return 'Debe ingresar el nombre del cable'
+                        }
+                    }
+                })
+
+                if (nombre)
+                    await AgregarCable(lineCoordinates, codigoHexadecimal, nombre); // Llamar a la función AgregarCable (personalizada)
+            })
+
+            map.addListener("click", (e) => {
+                if (drawEnabled) {
+                    lineCoordinates.push(e.latLng); // Agregar las coordenadas del punto a la matriz
+                    drawPolyline(codigoHexadecimal); // Dibuja la línea con las coordenadas actualizadas
+                    console.log(e.latLng.toJSON())// Mostrar las coordenadas en la consola
+                }
+            });
+        }
+
+        // Función para dibujar una línea
+        function drawPolyline(color) {
+            if (lineCoordinates.length > 0) {
+                // Crear una nueva línea con las coordenadas
+                const newPolyline = new google.maps.Polyline({
+                    path: lineCoordinates,
+                    geodesic: true,
+                    strokeColor: color, // Color de la línea (rojo)
+                    strokeOpacity: 1.0,
+                    strokeWeight: 2, // Grosor de la línea
+                    map: map
+                });
+
+                drawnPolylines.push(newPolyline); // Almacena la referencia de la línea
+            }
+        }
+
+        // Función para guardar la última línea dibujada
+        function saveLastDrawnPolyline() {
+            if (lastDrawnPolyline) {
+                lastDrawnPolyline.setMap(null); // Elimina la última línea dibujada del mapa
+
+            }
+        }
+
+        // Función para eliminar la última línea
+        function deleteLastPolyline() {
+            if (drawnPolylines.length > 0) {
+                const lastPolyline = drawnPolylines.pop(); // Obtiene la última línea dibujada
+                lastPolyline.setMap(null); // Elimina la última línea del mapa
+
+                // Elimina también las coordenadas de la línea del arreglo
+                lineCoordinates.pop();
+            }
+        }
+
+
+        // Obtener el elemento select
+        var selectElement = document.getElementById("colorSelected");
+
+        // Iterar sobre la lista de colores y agregar opciones al select
+        for (var i = 0; i < colores.length; i++) {
+            var option = document.createElement("option");
+            option.value = i + 0; // Asignar un valor único para cada opción
+            option.text = colores[i];
+            selectElement.appendChild(option);
+        }
+        selectElement.value = "0";
+
+        function obtenerColorSeleccionado() {
+            lineCoordinates = [];
+            var indiceColorSeleccionado = selectElement.value;
+            var colorSeleccionado = colores[indiceColorSeleccionado];
+            codigoHexadecimal = obtenerCodigoHexadecimal(colorSeleccionado);
+
+            // Puedes hacer lo que quieras con el color y su código hexadecimal
+            console.log("Color Seleccionado: " + colorSeleccionado);
+            console.log("Código Hexadecimal: " + codigoHexadecimal);
+        }
+        function obtenerCodigoHexadecimal(color) {
+            // Definir un mapeo de colores a códigos hexadecimales
+            var coloresHex = {
+                'Azul': '#0000FF',
+                'Naranja': '#FFA500',
+                'Verde': '#008000',
+                'Café': '#A52A2A',
+                'Gris': '#808080',
+                'Blanco': '#FFFFFF',
+                'Rojo': '#FF0000',
+                'Negro': '#000000',
+                'Amarillo': '#FFFF00',
+                'Violeta': '#8A2BE2',
+                'Rosa': '#FFC0CB',
+                'Aqua': '#00FFFF'
+                
+            };
+
+            // Devuelve el código hexadecimal correspondiente al color seleccionado
+            return coloresHex[color];
+        }
+
+        initMap();
+    </script>
+}

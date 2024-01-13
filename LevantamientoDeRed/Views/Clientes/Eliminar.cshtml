@@ -1,0 +1,65 @@
+﻿@using LevantamientoDeRed.Dto;
+@model ClienteDto
+
+@{
+    ViewData["Title"] = "Eliminar cliente";
+}
+
+<div class="bg-secondary">
+    <div id="layoutAuthentication">
+        <div id="layoutAuthentication_content">
+            <main>
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-7">
+                            <div class="card shadow-lg border-0 rounded-lg mt-5 mb-5">
+                                <div class="card-header">
+                                    <h3 class="text-center font-weight-light my-4">Eliminar cliente</h3>
+                                    @if (ViewData["error_obtener_cliente"] is not null)
+                                    {
+                                        <div class="alert alert-danger" role="alert">
+                                            <h4 class="alert-heading">Ocurri&oacute; un error</h4>
+                                            <p>@ViewData["error_obtener_cliente"]</p>
+                                        </div>
+                                        <a asp-action="Index" asp-controller="Clientes">Volver</a>
+                                    }
+                                </div>
+                                <div class="card-body">
+                                    @if (ViewData["error_obtener_cliente"] is null)
+                                    {
+                                        <div>
+                                            <dl class="row">
+                                                <dt class="col-sm-2">
+                                                    @Html.DisplayNameFor(model => model.Codigo)
+                                                </dt>
+                                                <dd class="col-sm-10">
+                                                    @Html.DisplayFor(model => model.Nombre)
+                                                </dd>
+                                                <dt class="col-sm-2">
+                                                    @Html.DisplayNameFor(model => model.Direccion)
+                                                </dt>
+                                                <dd class="col-sm-10">
+                                                    @Html.DisplayFor(model => model.Telefono)
+                                                </dd>
+                                                <dd class="col-sm-10">
+                                                    @Html.DisplayFor(model => model.Activo)
+                                                </dd>                                                
+
+                                            </dl>
+
+                                            <form asp-action="Eliminar" asp-controller="Clientes">
+                                                <input type="hidden" asp-for="Id" />
+                                                <input type="submit" value="Eliminar" class="btn btn-danger" />
+                                                <a asp-action="Index" asp-controller="Clientes" class="btn btn-secondary">Volver</a>
+                                            </form>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>

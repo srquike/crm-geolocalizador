@@ -1,0 +1,115 @@
+﻿@using LevantamientoDeRed.Entities;
+@using Microsoft.AspNetCore.Identity
+@using System.Security.Claims;
+@inject SignInManager<Usuario> SignInManager
+@inject UserManager<Usuario> UserManager
+
+<!DOCTYPE html>
+<html lang="es-sv">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>@ViewData["Title"] :: NetOne TV</title>
+    <link href="~/css/datatables/datatables.min.css" rel="stylesheet">
+    <link href="~/css/datatables/jquery.dataTables.min.css" rel="stylesheet">
+    <link href="~/css/datatables/buttons.dataTables.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sweetalert2/sweetalert2.min.css" />
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico">
+    <script src="~/js/fontawesome/all.min.js"></script>
+</head>
+<body class="sb-nav-fixed">
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" asp-action="Index" asp-controller="Home">NetOne TV</a>
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+        }
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+            @if (SignInManager.IsSignedIn(User))
+            {
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" asp-action="Salir" asp-controller="Usuarios">Cerrar sesi&oacute;n</a></li>
+                    </ul>
+                </li>
+            }
+            else
+            {
+                <li class="nav-item">
+                    <a class="nav-link" asp-action="Acceder" asp-controller="Usuarios">Iniciar sesi&oacute;n</a>
+                </li>
+            }
+        </ul>
+    </nav>
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">Inicio</div>
+                            <a class="nav-link" href="/">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Tablero
+                            </a>
+                            <div class="sb-sidenav-menu-heading">Mapas</div>
+                            <a class="nav-link collapsed" href="/General">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-map"></i></div>
+                                General
+                            </a>
+                            <a class="nav-link collapsed" href="/Cables">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-circle-nodes"></i></div>
+                                Cables
+                            </a>
+                            <a class="nav-link collapsed" href="/Postes">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-tower-broadcast"></i></div>
+                                Postes
+                            </a>
+                            <a class="nav-link collapsed" href="/Clientes">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-house-user"></i></div>
+                                Clientes
+                            </a>
+                            <div class="sb-sidenav-menu-heading">Administrar</div>
+                            @if (User.IsInRole("Administrador"))
+                            {
+                                <a class="nav-link" href="/Usuarios">
+                                    <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
+                                    Usuarios
+                                </a>
+                                <a class="nav-link collapsed" href="/Contratos">
+                                    <div class="sb-nav-link-icon"><i class="fa-solid fa-file-signature"></i></div>
+                                    Contratos
+                                </a>
+                            }
+                        </div>
+                    </div>
+                    <div class="sb-sidenav-footer">
+                        <div class="small">Sesi&oacute;n iniciada como:</div>
+                        @(User.FindFirst(ClaimTypes.Actor)?.Value)
+                    </div>
+                }
+            </nav>
+        </div>
+        <div id="layoutSidenav_content">
+            <main role="main" style="height: 100%">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@("@")popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+    <script src="~/js/bootstrap/bootstrap.min.js"></script>
+    <script src="~/js/scripts.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/datatables/datatables.min.js"></script>
+    <script src="~/js/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/js/datatables/dataTables.buttons.min.js"></script>
+    <script src="~/js/sweetalert2/sweetalert2.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

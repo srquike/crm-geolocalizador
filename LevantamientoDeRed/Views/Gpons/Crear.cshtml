@@ -1,0 +1,129 @@
+﻿@{
+    ViewData["Title"] = "Crear GPON";
+}
+
+<div class="container-fluid px-4" style="display: grid">
+    <h1 class="mt-4">Crear GPON</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li>
+        <li class="breadcrumb-item"><a href="/Postes">Postes</a></li>
+        <li class="breadcrumb-item"><a href="/Gpons">Mapa de GPONs</a></li>
+        <li class="breadcrumb-item active">Crear GPON</li>
+    </ol>
+    @* <div class="btn-group mb-4" role="group">
+        <input type="checkbox" class="btn-check" id="drawLinesCheckbox" autocomplete="off">
+        <label class="btn btn-outline-primary" for="drawLinesCheckbox" id="drawLinesCheckboxLabel">Agregar</label>
+    </div> *@
+    <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+        <button type="button" id="btnGuardar" class="btn btn-success" onclick="showCreateModal()">Crear Nuevo GPON</button>
+    </div>
+
+    @* <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Crear GPON
+        </div>
+        <div class="card-body">
+            <div id="map" style="height: 500px"></div>
+        </div>
+    </div> *@
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_GoogleMapsScriptsPartial");
+        await Html.RenderPartialAsync("_PostesControllerScriptsPartial");
+        await Html.RenderPartialAsync("_GponsControllerScriptsPartial");
+    }
+
+    <script>
+        let map;
+        let gpon = {};
+
+        async function initMap() {
+            const position = { lat: 13.924394865271614, lng: -89.849635478908 };
+            const { Map } = await google.maps.importLibrary("maps");
+
+            map = new Map(document.getElementById("map"), {
+                zoom: 15,
+                center: position,
+                mapId: "DEMO_MAP_ID",
+            });
+
+            const btnGuardar = document.getElementById("btnGuardar");
+
+            // drawLinesCheckbox.addEventListener("change", () => {
+            //     drawEnabled = drawLinesCheckbox.checked;
+
+            //     if (drawEnabled) {
+            //         drawLinesCheckboxLabel.innerHTML = "Dejar de agregar"; // Cambiar el texto del botón
+            //         btnGuardar.disabled = true;
+            //     } else {
+            //         drawLinesCheckboxLabel.innerHTML = "Agregar"; // Cambiar el texto del botón
+            //         btnGuardar.disabled = false;
+            //     }
+            // });
+
+            btnGuardar.addEventListener("click", async () => {
+                await showCreateModal();
+            })
+
+            map.addListener("click", (e) => {
+                if (drawEnabled) {
+                    gpon = e.latLng; // Agregar las coordenadas del punto a la matriz
+                    add(e.latLng);
+                }
+            });
+        }
+
+        function add(location) {
+            const newGpon = new google.maps.Marker({
+                position: location,
+                map: map,
+                title: "Nuevo Punto",
+                icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            });
+        }
+
+        async function showCreateModal() {
+            const postes = (await obtenerPostes()).map((poste) => `<option value="${poste.id}">${poste.nombre}</option>`).join();
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Datos del nuevo GPON',
+                html:
+                    // Input del nombre
+                    '<div class="form-floating mb-3">' +
+                    '<input type="text" class="form-control" id="gpon-nombre" placeholder="Ingrese el nombre de la mufa" required>' +
+                    '<label for="floatingInput">Nombre</label>' +
+                    '</div>' +
+                    // Select de tipos de mufas
+                    '<div class="form-floating mb-3">' +
+                    '  <select class="form-select" id="postes-list" required>' +
+                    '    <option value="">-- No asignar aun --</option>' +
+                    postes +
+                    '  </select>' +
+                    '  <label for="postes-list">Postes</label>' +
+                    '</div>',
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: () => {
+                    return [
+                        document.getElementById('gpon-nombre').value,
+                        document.getElementById('postes-list').value,
+                    ]
+                }
+            })
+
+            if (formValues) {
+                const toSend = {
+                    nombre: formValues[0],
+                    posteId: formValues[1]
+                };
+
+                await AgregarGpon(toSend)
+            }
+        }
+
+        //initMap();
+    </script>
+}

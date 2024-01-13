@@ -1,0 +1,108 @@
+﻿@using LevantamientoDeRed.Dto;
+@using Microsoft.AspNetCore.Identity;
+@model CrearContratoDto
+
+@{
+    ViewData["Title"] = "Editar contrato";
+}
+
+<div class="bg-secondary">
+    <div id="layoutAuthentication">
+        <div id="layoutAuthentication_content">
+            <main>
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-7">
+                            <div class="card shadow-lg border-0 rounded-lg mt-5 mb-5">
+                                <div class="card-header">
+                                    <h3 class="text-center font-weight-light my-4">Editar Contrato</h3>
+                                    @if (ViewData["error_mensaje_editar"] is not null)
+                                    {
+                                        <div class="alert alert-danger" role="alert">
+                                            <h4 class="alert-heading">Ocurri&oacute; un error</h4>
+                                            <p>@ViewData["error_mensaje_editar"]</p>
+                                            @if (ViewData["error_errors_editar"] is not null)
+                                            {
+                                                <hr>
+                                                <ul>
+                                                    @foreach (var item in ViewData["error_errors_editar"] as IEnumerable<IdentityError>)
+                                                    {
+                                                        <li class="mb-0">@item.Description</li>
+                                                    }
+                                                </ul>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                                <div class="card-body">
+                                    <form asp-action="Editar" asp-controller="Contratos">
+                                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3 mb-md-0">
+                                                    <input asp-for="Nombre" maxlength="15" class="form-control" id="Nombre" type="text" placeholder="" />
+                                                    <label asp-for="Nombre">Nombre</label>
+                                                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating">
+                                                    <input asp-for="Descripcion" maxlength="50" class="form-control" id="Descripcion" type="text" placeholder="" />
+                                                    <label asp-for="Descripcion">Descripcion</label>
+                                                    <span asp-validation-for="Descripcion" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3 ">
+                                                    <input asp-for="PrecioMensual" class="form-control" min="0.00" max="999.99" step="0.01" id="PrecioMensual" type="number" placeholder="" />
+                                                    <label asp-for="PrecioMensual">Precio Mensual</label>
+                                                    <span asp-validation-for="PrecioMensual" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3 ">
+                                                    <input asp-for="FechaInicio" maxlength="50" class="form-control" id="FechaInicio" type="date" placeholder="" />
+                                                    <label asp-for="FechaInicio">Fecha Inicio</label>
+                                                    <span asp-validation-for="FechaInicio" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3 ">
+                                                    <input asp-for="FechaFinal" maxlength="50" class="form-control" id="FechaFinal" type="date" placeholder="" />
+                                                    <label asp-for="FechaFinal">Fecha Final</label>
+                                                    <span asp-validation-for="FechaFinal" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md">
+                                                <div class="form-floating mb-3 ">
+                                                    <select id="ServicioId" asp-for="ServicioId" class="form-select"></select>
+                                                    <label asp-for="ServicioId">Servicio</label>
+                                                    <span asp-validation-for="ServicioId" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4">
+                                            <div class="d-grid gap-2 d-md-block">
+                                                <input type="submit" value="Guardar Cambios" class="btn btn-primary btn-block">
+                                                <a asp-action="Index" asp-controller="Contratos" class="btn btn-secondary btn-block">Volver</a>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        await Html.RenderPartialAsync("_ObtenerServiciosScripsPartial");
+    }
+}

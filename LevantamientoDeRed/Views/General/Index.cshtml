@@ -1,0 +1,196 @@
+﻿@{
+    ViewData["Title"] = "Mapa general";
+}
+
+<div class="container-fluid px-4" style="display: grid">
+    <h1 class="mt-4">Mapa general</h1>
+
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li>
+        <li class="breadcrumb-item active">Mapa general</li>
+    </ol>
+
+    @* <div class="btn-group mb-3" role="group" aria-label="Basic checkbox toggle button group">
+        <input type="checkbox" class="btn-check" id="btncheck1" autocomplete="off">
+        <label class="btn btn-outline-primary" for="btncheck1">Cables</label>
+
+        <input type="checkbox" class="btn-check" id="btncheck2" autocomplete="off">
+        <label class="btn btn-outline-primary" for="btncheck2">Postes</label>
+
+        <input type="checkbox" class="btn-check" id="btncheck3" autocomplete="off">
+        <label class="btn btn-outline-primary" for="btncheck3">Mufas</label>
+        
+        <input type="checkbox" class="btn-check" id="btncheck3" autocomplete="off">
+        <label class="btn btn-outline-primary" for="btncheck3">GPONs</label>
+        
+        <input type="checkbox" class="btn-check" id="btncheck3" autocomplete="off">
+        <label class="btn btn-outline-primary" for="btncheck3">Clientes</label>
+    </div> *@
+
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Mapa general
+        </div>
+        <div class="card-body">
+            <div id="map" style="height: 600px"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_GoogleMapsScriptsPartial");
+        await Html.RenderPartialAsync("_InitMapScriptPartial");
+        await Html.RenderPartialAsync("_PostesControllerScriptsPartial");
+        await Html.RenderPartialAsync("_MufasControllerScriptsPartial");
+        await Html.RenderPartialAsync("_GponsControllerScriptsPartial");
+        await Html.RenderPartialAsync("_CablesControllerScriptsPartial");
+        await Html.RenderPartialAsync("_ClientesControllerScriptsPartial");
+    }
+
+    <script async>
+        let map;
+        let marcadores = [];
+        const drawnPolylines = [];
+
+        async function initMap() {
+            const position = { lat: 13.924394865271614, lng: -89.849635478908 };
+            const { Map } = await google.maps.importLibrary("maps");
+            const postes = await obtenerPostes();
+            const mufas = await ObtenerMufas();
+            const gpons = await ObtenerGpons();
+            const clientes = await obtenerClientes();
+            const cables = await obtenerCables();
+
+            map = new Map(document.getElementById("map"), {
+                zoom: 15,
+                center: position,
+                mapId: "DEMO_MAP_ID",
+            });
+
+            postes.map((poste) => {
+                drawPoste(poste)
+            });
+
+            mufas.map((mufa) => {
+                drawMufa(mufa)
+            });
+
+            gpons.map((gpon) => {
+                draw(gpon)
+            });
+
+            clientes.map((cliente) => {
+                drawCliente(cliente)
+            });
+
+            cables.map((cable) => {
+                drawCable(cable)
+            });
+        }
+
+        function drawPoste(poste) {
+            const latLng = {
+                lat: poste.latitud,
+                lng: poste.longitud
+            };
+            const imageUrl = "\logo_poste.png";
+            const newPoste = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                title: poste.nombre,
+                icon: {
+                    url: imageUrl,
+                    scaledSize: new google.maps.Size(60, 60) // Ajusta el tamaño según tus necesidades
+                },
+            });
+            marcadores.push(newPoste);
+        }
+
+        function drawMufa(mufa) {
+            const latLng = {
+                lat: mufa.latitud,
+                lng: mufa.longitud
+            };
+            const imageUrl = "\logo_mufa.png";
+            const newMufa = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                title: mufa.nombre,
+                icon: {
+                    url: imageUrl,
+                    scaledSize: new google.maps.Size(30, 30) // Ajusta el tamaño según tus necesidades
+                },
+            });
+            marcadores.push(newMufa);
+        }
+
+        function draw(gpon) {
+            const latLng = {
+                lat: gpon.latitud,
+                lng: gpon.longitud
+            };
+            const imageUrl = "\logo_gpon.png";
+            const newGpon = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                title: gpon.nombre,
+                icon: {
+                    url: imageUrl,
+                    scaledSize: new google.maps.Size(30, 30) // Ajusta el tamaño según tus necesidades
+                },
+            });
+            marcadores.push(newGpon);
+        }
+
+        function drawCliente(cliente) {
+            const latLng = {
+                lat: cliente.latitud,
+                lng: cliente.longitud
+            };
+            const imageUrl = "\logo_usuario.png";
+            const newCliente = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                title: cliente.nombre,
+                //icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                icon: {
+                    url: imageUrl,
+                    scaledSize: new google.maps.Size(40, 40) // Ajusta el tamaño según tus necesidades
+                },
+            });
+            marcadores.push(newCliente);
+        }
+
+        function drawCable(cable) {
+            const coordinates = [];
+
+            cable.puntos.map((punto) => {
+                coordinates.push({
+                    lat: punto.latitud,
+                    lng: punto.longitud
+                });
+            });
+
+            drawPolyline(coordinates, cable.tipo);
+        }
+
+        function drawPolyline(lineCoordinates, color) {
+            const newPolyline = new google.maps.Polyline({
+                path: lineCoordinates,
+                geodesic: true,
+                strokeColor: color,
+                strokeOpacity: 1.0,
+                strokeWeight: 2,
+                map: map
+            });
+
+            drawnPolylines.push(newPolyline);
+
+            console.log(lineCoordinates);
+        }
+
+        initMap();
+    </script>
+}

@@ -1,0 +1,260 @@
+﻿@{
+    ViewData["Title"] = "Mapa de mufas";
+}
+
+<div class="container-fluid px-4" style="display: grid">
+    <h1 class="mt-4">Mapa de mufas</h1>
+
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li> 
+        <li class="breadcrumb-item"><a href="/Postes">Postes</a></li>
+        <li class="breadcrumb-item active">Mapa de mufas</li>
+    </ol>
+    @if (User.IsInRole("Administrador") || User.IsInRole("Jefe"))
+    {
+        <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+            <a asp-action="Crear" class="btn btn-success">Crear</a>
+            <button id="editarButtonElement" type="button" class="btn btn-info">Editar</button>
+            <button id="eliminarButtonElement" type="button" class="btn btn-danger">Eliminar</button>
+        </div>
+    }
+    else if (User.IsInRole("Tecnico"))
+    {
+        <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+            <a asp-action="Crear" class="btn btn-success">Crear</a>
+        </div>
+    }
+
+    <div class="form-floating mb-4">
+        <select id="mufasSelectElement" class="form-select">
+            <option selected value="0">Todos</option>
+        </select>
+        <label for="mufasSelectElement">Seleccionar</label>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Mapa de mufas
+        </div>
+        <div class="card-body">
+            <div id="map" style="height: 500px"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_GoogleMapsScriptsPartial");
+        await Html.RenderPartialAsync("_MufasControllerScriptsPartial");
+        await Html.RenderPartialAsync("_GponsControllerScriptsPartial");
+        await Html.RenderPartialAsync("_PostesControllerScriptsPartial");
+    }
+
+    <script async>
+        let map;
+        let marcadores = [];
+
+        async function initMap() {
+            const position = { lat: 13.924394865271614, lng: -89.849635478908 };
+            const { Map } = await google.maps.importLibrary("maps");
+            const mufas = await ObtenerMufas();
+
+            map = new Map(document.getElementById("map"), {
+                zoom: 15,
+                center: position,
+                mapId: "DEMO_MAP_ID",
+            });
+
+            mufas.map((mufa) => {
+                drawMufa(mufa)
+            });
+
+            rellenarElementoSelectMufa(mufas);
+
+            document.getElementById("mufasSelectElement").addEventListener("change", async () => {
+                const selectElement = document.getElementById("mufasSelectElement");
+                //eliminar todos cuando se selecciona 1
+                deleteAllMarkers();
+
+                if (selectElement.value === "0") {
+                    mufas.map((mufa) => {
+                        drawMufa(mufa)
+                    });
+                } else {
+                    const fromApi = await obtenerMufa(selectElement.value);
+
+                    drawMufa(fromApi);
+                }
+            });
+
+            document.getElementById("editarButtonElement").addEventListener("click", async () => {
+                const selectElement = document.getElementById("mufasSelectElement");
+
+                if (selectElement.value !== "0") {
+                    await showEditModal(selectElement.value);
+                }
+                else {
+                    await Swal.fire(
+                        'Advertencia',
+                        'Debe seleccionar un poste para realizar esta accion',
+                        'warning'
+                    )
+                }
+            });
+
+            document.getElementById("eliminarButtonElement").addEventListener("click", async () => {
+                const selectElement = document.getElementById("mufasSelectElement");
+                const URL_BASE = `${window.location.protocol}//${window.location.hostname}${PORT}/Mufas/Eliminar`;
+
+                if (selectElement.value !== "0") {
+                    window.location.href = URL_BASE + "/" + selectElement.value;
+                }
+                else {
+                    await Swal.fire(
+                        'Advertencia',
+                        'Debe seleccionar una mufa para realizar esta accion',
+                        'warning'
+                    )
+                }
+            });
+
+            document.getElementById("editarButtonElement").addEventListener("click", async () => {
+                const selectElement = document.getElementById("mufasSelectElement");
+
+                if (selectElement.value !== "0") {
+                    showEditModal(selectElement.value);
+                }
+                else {
+                    await Swal.fire(
+                        'Advertencia',
+                        'Debe seleccionar una mufa para realizar esta accion',
+                        'warning'
+                    )
+                }
+            });
+        }
+
+        function drawMufa(mufa) {
+            const latLng = {
+                lat: mufa.latitud,
+                lng: mufa.longitud
+            };
+            const imageUrl = "\logo_mufa.png";
+            const newMufa = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                title: mufa.nombre,
+                icon: {
+                    url: imageUrl,
+                    scaledSize: new google.maps.Size(30, 30) // Ajusta el tamaño según tus necesidades
+                },
+            });
+            marcadores.push(newMufa);
+        }
+
+        // Elimina todos los marcadores cuando se llama
+        function deleteAllMarkers() {
+            for (var i = 0; i < marcadores.length; i++) {
+                marcadores[i].setMap(null);
+            }
+
+            // Limpia el array de marcadores
+            marcadores = [];
+        }
+
+        async function showEditModal(id) {
+            let toEdit = await obtenerMufa(id);
+
+            const gpons = (await ObtenerGpons()).map((gpon) => {
+                if (gpon.id === toEdit.gponId) {
+                    return `<option value="${gpon.id}" selected>${gpon.nombre}</option>`;
+                }
+
+                return `<option value="${gpon.id}">${gpon.nombre}</option>`;
+            }).join();
+
+
+            const postes = (await obtenerPostes()).map((poste) => {
+                if (poste.id === toEdit.posteId) {
+                    return `<option value="${poste.id}" selected>${poste.nombre}</option>`;
+                }
+
+                return `<option value="${poste.id}">${poste.nombre}</option>`;
+            }).join();
+
+            const tipos = [
+                { value: "Clientes", nombre: "Clientes" },
+                { value: "Reparación", nombre: "Reparación" },
+                { value: "Derivación", nombre: "Derivación" },
+                { value: "Distribución", nombre: "Distribución" }
+            
+            ].map((tipo) => {
+                if (tipo.value === toEdit.tipo) {
+                    return `<option value="${tipo.value}" selected>${tipo.nombre}</option>`;
+                }
+
+                return `<option value="${tipo.value}">${tipo.nombre}</option>`;
+            }).join();
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Datos de la mufa',
+                html:
+                    // Input del nombre
+                    '<div class="form-floating mb-3">' +
+                    `<input type="text" value="${toEdit.nombre}" class="form-control" id="mufa-nombre" placeholder="Ingrese el nombre de la mufa" required>` +
+                    '<label for="floatingInput">Nombre</label>' +
+                    '</div>' +
+                    // Select de tipos de mufas
+                    '<div class="form-floating mb-3">' +
+                    '  <select class="form-select" id="mufas-tipo" required>' +
+                    tipos +
+                    '  </select>' +
+                    '  <label for="cliente-estado">Tipo</label>' +
+                    '</div>' +
+                    // Select de GPONs
+                    '<div class="form-floating mb-3">' +
+                    '  <select class="form-select" id="gpons" required>' +
+                    '    <option value="">-- No asignar aun --</option>' +
+                    gpons +
+                    '  </select>' +
+                    '  <label for="cliente-estado">GPON</label>' +
+                    '</div>' +
+                    // Select de Postes
+                    '<div class="form-floating mb-3">' +
+                    '  <select class="form-select" id="postes" required>' +
+                    '    <option value="">-- No asignar aun --</option>' +
+                    postes +
+                    '  </select>' +
+                    '  <label for="cliente-estado">Poste</label>' +
+                    '</div>' +
+                    `<input type="hidden" value="${toEdit.id}" class="form-control" id="mufa-id">`,
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: () => {
+                    return [
+                        document.getElementById('mufa-nombre').value,
+                        document.getElementById('mufas-tipo').value,
+                        document.getElementById('gpons').value,
+                        document.getElementById('postes').value,
+                        document.getElementById('mufa-id').value
+                    ]
+                }
+            })
+
+            if (formValues) {
+                const toSend = {
+                    nombre: formValues[0],
+                    tipo: formValues[1],
+                    gponId: formValues[2],
+                    posteId: formValues[3],
+                    id: formValues[4]
+                };
+
+                await EditarMufa(toSend)
+            }
+        }
+
+        initMap();
+    </script>
+}

@@ -1,0 +1,73 @@
+﻿@using LevantamientoDeRed.Dto;
+@model List<ContratoDto>
+
+@{
+    ViewData["Title"] = "Listado de Contratos";
+    var contador = 0;
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Contratos</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li>
+        <li class="breadcrumb-item active">Contratos</li>
+    </ol>
+    <a asp-action="Crear" asp-controller="Contratos" class="btn btn-success mb-3">Crear nuevo Contrato</a>
+    <a asp-action="Index" asp-controller="Servicios" class="btn btn-primary mb-3">Servicios</a>
+    @if (ViewData["error_mensaje_listado_Contratos"] is not null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Ocurri&oacute; un error</h4>
+            <p>@ViewData["error_mensaje_listado_Contratos"]</p>
+        </div>
+    }
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Registros
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table" id="datatablesContratos">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre</th>
+                            <th>Descripci&oacute;n</th>
+                            <th>Precio Mensual</th>
+                            <th>Servicio</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Final</th>                           
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model ?? new())
+                        {
+                            <tr>
+                                <td>@(++contador)</td>
+                                <td>@item.Nombre</td>
+                                <td>@item.Descripcion</td>
+                                <td>$@item.PrecioMensual.ToString("N2")</td>
+                                <td>@item.Servicio</td>
+                                <td>@item.FechaInicio.ToString("dd/MM/yyyy")</td>
+                                <td>@item.FechaFinal.ToString("dd/MM/yyyy")</td>                                
+                                <td class="d-md-block">
+                                    <div class="d-flex gap-2">
+                                        <a asp-action="Editar" asp-controller="Contratos" asp-route-id="@item.Id" class="btn btn-info">Editar</a>
+                                        <a asp-action="Eliminar" asp-controller="Contratos" asp-route-id="@item.Id" class="btn btn-danger">Eliminar</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/ListaContratosDatatable.js"></script>
+}
+

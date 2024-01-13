@@ -1,0 +1,202 @@
+﻿@{
+    ViewData["Title"] = "Crear cliente";
+}
+
+<div class="container-fluid px-4" style="display: grid">
+    <h1 class="mt-4">Crear cliente</h1>
+
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li>
+        <li class="breadcrumb-item"><a href="/Clientes">Clientes</a></li>
+        <li class="breadcrumb-item active">Crear cliente</li>
+    </ol>
+
+    <div class="btn-group mb-4" role="group">
+        <input type="checkbox" class="btn-check" id="drawLinesCheckbox" autocomplete="off">
+        <label class="btn btn-outline-primary" for="drawLinesCheckbox" id="drawLinesCheckboxLabel">Agregar</label>
+    </div>
+
+    <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+        <button type="button" id="btnGuardar" class="btn btn-success" disabled>Guardar</button>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Crear cliente
+        </div>
+        <div class="card-body">
+            <div id="map" style="height: 500px"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_GoogleMapsScriptsPartial");
+        await Html.RenderPartialAsync("_ClientesControllerScriptsPartial");         
+        await Html.RenderPartialAsync("_MufasControllerScriptsPartial");         
+        await Html.RenderPartialAsync("_ContratosControllerScriptsPartial");         
+    }
+
+    <script>
+        let map;
+        let cliente = {};
+        let marcadores = [];
+
+        async function initMap() {
+            const position = { lat: 13.924394865271614, lng: -89.849635478908 };
+            const { Map } = await google.maps.importLibrary("maps");
+
+            map = new Map(document.getElementById("map"), {
+                zoom: 15,
+                center: position,
+                mapId: "DEMO_MAP_ID",
+            });
+
+            const btnGuardar = document.getElementById("btnGuardar");
+
+            drawLinesCheckbox.addEventListener("change", () => {
+                drawEnabled = drawLinesCheckbox.checked;
+
+                if (drawEnabled) {
+                    drawLinesCheckboxLabel.innerHTML = "Dejar de agregar cliente"; // Cambiar el texto del botón
+                    btnGuardar.disabled = true;
+                } else {
+                    //saveLastDrawnPolyline(); // Al desactivar, guardar la línea dibujada
+                    drawLinesCheckboxLabel.innerHTML = "Agregar"; // Cambiar el texto del botón
+                    btnGuardar.disabled = false;
+                }
+            });
+
+            btnGuardar.addEventListener("click", async () => {
+                await showCreateModal();
+            })
+
+            map.addListener("click", (e) => {
+                if (drawEnabled) {
+                    deleteAllMarkers()
+                    cliente = e.latLng; // Agregar las coordenadas del punto a la matriz
+                    add(cliente);
+                }
+            });
+        }
+
+        function add(location) {
+            const newPoste = new google.maps.Marker({
+                position: location,
+                map: map,
+                title: "Nuevo Punto",
+                icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            });
+
+            marcadores.push(newPoste);
+        }
+
+        function deleteAllMarkers() {
+            for (var i = 0; i < marcadores.length; i++) {
+                marcadores[i].setMap(null);
+            }
+
+            // Limpia el array de marcadores
+            marcadores = [];
+        }
+
+        async function showCreateModal() {
+            const mufas = (await ObtenerMufas()).map((mufa) => `<option value="${mufa.id}">${mufa.nombre}</option>`).join();
+            const contratos = (await obtenerContratosAsync()).map((contrato) => `<option value="${contrato.id}">${contrato.nombre}</option>`).join();
+
+            const contratoOptions = '<option value"contrato-api">Contrato de API</option>'; // Obtener la lista de contratos de la API y convertirlas a string
+
+            //const gponsOptions = '<option value"gpon-api">GPON de API</option>'; // Obtener la lista de gpons de la API y convertirlas a string
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Datos del nuevo cliente',
+                html:
+                    // Input del codigo
+                    '<div class="form-floating mb-3">' +
+                    '<input type="text" class="form-control" id="cliente-codigo" placeholder="Ingrese el codigo del cliente" required>' +
+                    '<label for="floatingInput">Codigo</label>' +
+                    '</div>' +
+                    // Input del nombre
+                    '<div class="form-floating mb-3">' +
+                    '<input type="text" class="form-control" id="cliente-nombre" placeholder="Ingrese el nombre del cliente" required>' +
+                    '<label for="floatingInput">Nombre</label>' +
+                    '</div>' +
+                    // Input del apellido
+                    '<div class="form-floating mb-3">' +
+                    '<input type="text" class="form-control" id="cliente-apellido" placeholder="Ingrese el apellido del cliente" required>' +
+                    '<label for="floatingInput">Apellido</label>' +
+                    '</div>' +
+                    // Input del direccion
+                    '<div class="form-floating mb-3">' +
+                    '<input type="text" class="form-control" id="cliente-direccion" placeholder="Ingrese la direccion del cliente" required>' +
+                    '<label for="floatingInput">Direccion</label>' +
+                    '</div>' +
+                    // Input del telefono
+                    '<div class="form-floating mb-3">' +
+                    '<input type="text" class="form-control" id="cliente-telefono" placeholder="Ingrese el numero del cliente" required>' +
+                    '<label for="floatingInput">Telefono</label>' +
+                    '</div>' +
+                    // Input del estado
+                    '<div class="input-group mb-3">' +
+                        '<div class="input-group-text">' +
+                            '<input id="activar" class="form-check-input mt-0" type="checkbox" aria-label="Checkbox for following text input">' +
+                        '</div>' +
+                        '<input type="text" class="form-control" value="Activar" aria-label="Text input with checkbox" readonly>' +
+                    '</div>' +
+                    // Select de mufas
+                    '<div class="form-floating mb-3">' +
+                    '<select class="form-select" id="mufas">' +
+                    '<option selected value="">No agregar aún</option>' +
+                    mufas +
+                    '</select>' +
+                    '<label for="floatingSelect">Mufa</label>' +
+                    '</div>' +
+                    // Select de contrato
+                    '<div class="form-floating mb-3">' +
+                    '<select class="form-select" id="contrato">' +
+                    '<option selected value="">No agregar aún</option>' +
+                    contratos +
+                    '</select>' +
+                    '<label for="floatingSelect">Contrato</label>' +
+                    '</div>',
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: () => {
+                    return [
+                        document.getElementById('cliente-codigo').value,
+                        document.getElementById('cliente-nombre').value,
+                        document.getElementById('cliente-apellido').value,
+                        document.getElementById('cliente-direccion').value,                        
+                        document.getElementById('cliente-telefono').value,
+                        document.getElementById('activar').checked,
+                        document.getElementById('mufas').value,
+                        document.getElementById('contrato').value,
+                        
+                    ]
+                }
+            })
+
+            if (formValues) {
+                const clienteToSend = {
+                    codigo: formValues[0],
+                    nombre: formValues[1],
+                    apellido: formValues[2],
+                    direccion: formValues[3],
+                    telefono: formValues[4],
+                    activo: formValues[5] === 'on' ? true : false,
+                    mufaId: formValues[6],
+                    contratoId: formValues[7],
+                    longitud: cliente.lng(),
+                    latitud: cliente.lat(),
+
+                };
+
+                await AgregarCliente(clienteToSend);
+            }
+        }
+
+        initMap();
+    </script>
+}

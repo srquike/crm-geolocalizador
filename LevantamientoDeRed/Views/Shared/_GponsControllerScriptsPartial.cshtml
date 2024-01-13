@@ -1,0 +1,114 @@
+﻿<script>
+    const PORT_GPON = window.location.port !== "" ? `:${window.location.port}` : "";
+    const URL_BASE_GPON = `${window.location.protocol}//${window.location.hostname}${PORT_GPON}/api`;
+
+    async function AgregarGpon(toSend) {
+        try {
+            const respuesta = await fetch(URL_BASE_GPON + "/gpons/crear", {
+                method: "POST",
+                body: JSON.stringify(toSend),
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            });
+
+            if (respuesta.ok) {
+                await Swal.fire(
+                    'Hecho!',
+                    'Gpon Creado con Exito',
+                    'success'
+                )
+            } else {
+                await Swal.fire(
+                    'Error',
+                    JSON.stringify(await respuesta.json()),
+                    'error'
+                )
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function ObtenerGpons() {
+        try {
+            const respuesta = await fetch(URL_BASE_GPON + "/gpons", {
+                method: "GET"
+            });
+
+            if (respuesta.ok) {
+                const resultados = await respuesta.json();
+                return resultados;
+            } else {
+                await Swal.fire(
+                    'Error',
+                    "La solicitud para obtener la lista de GPONs no fue exitosa",
+                    'error'
+                )
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function obtenerGpon(id) {
+        try {
+            const response = await fetch(URL_BASE_GPON + "/gpons/" + id, {
+                method: "GET",
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return result;
+            } else {
+                await Swal.fire(
+                    'Error',
+                    "La solicitud para obtener el GPON no fue exitosa",
+                    'error'
+                )
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function rellenarElementoSelectGpons(gpons) {
+        const selectElement = document.getElementById("selectElement");
+
+        gpons.map((gpon, index) => {
+            const optionElement = document.createElement("option");
+            optionElement.value = gpon.id;
+            optionElement.text = gpon.posteId ? gpon.nombre : `${gpon.nombre} (sin poste)`;
+            selectElement.appendChild(optionElement);
+        });
+    }
+
+    async function EditarGpon(toSend) {
+        try {
+            const respuesta = await fetch(URL_BASE_GPON + "/gpons/editar", {
+                method: "PUT",
+                body: JSON.stringify(toSend),
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            });
+
+            if (respuesta.ok) {
+                await Swal.fire(
+                    'Hecho!',
+                    'Gpon modificado con Exito',
+                    'success'
+                )
+            } else {
+                await Swal.fire(
+                    'Error',
+                    JSON.stringify(await respuesta.json()),
+                    'error'
+                )
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+</script>

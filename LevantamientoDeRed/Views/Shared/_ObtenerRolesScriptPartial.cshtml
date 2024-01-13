@@ -1,0 +1,35 @@
+﻿<script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", () => {
+        const rolesSelectElement = document.getElementById("Roles");
+        const cargandoOptionElement = document.createElement("option");
+        const port = window.location.port !== "" ? `:${window.location.port}` : "";
+        const url = `${window.location.protocol}//${window.location.hostname}${port}/Usuarios/Roles`;
+        cargandoOptionElement.value = "";
+        cargandoOptionElement.text = "-- cargando --";
+        rolesSelectElement.appendChild(cargandoOptionElement);
+
+        fetch(url)
+            .then((respuesta) => {
+                if (respuesta.ok) {
+                    return respuesta.json();
+                }
+            })
+            .then((roles) => {
+                if (roles.length !== 0) {
+                    roles.map((rol) => {
+                        const rolOptionElement = document.createElement("option");
+                        rolOptionElement.value = rol.name;
+                        rolOptionElement.text = rol.name;
+                        rolOptionElement.selected = true;
+                        rolesSelectElement.appendChild(rolOptionElement);
+                    });
+                } else {
+                    const vacioOptionElement = document.createElement("option");
+                    vacioOptionElement.value = "";
+                    vacioOptionElement.text = "-- no hay roles --";
+                    vacioOptionElement.selected = true;
+                    rolesSelectElement.appendChild(vacioOptionElement);
+                }
+            });
+    });
+</script>

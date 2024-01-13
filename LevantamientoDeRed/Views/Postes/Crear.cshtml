@@ -1,0 +1,159 @@
+﻿@{
+    ViewData["Title"] = "Crear poste";
+}
+
+<div class="container-fluid px-4" style="display: grid">
+    <h1 class="mt-4">Crear poste </h1>
+
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li>
+        <li class="breadcrumb-item"><a href="/Postes">Postes</a></li>
+        <li class="breadcrumb-item active">Crear poste </li>
+    </ol>
+
+    <div class="btn-group mb-4" role="group">
+        <input type="checkbox" class="btn-check" id="drawLinesCheckbox" autocomplete="off">
+        <label class="btn btn-outline-primary" for="drawLinesCheckbox" id="drawLinesCheckboxLabel">Agregar Poste</label>
+    </div>
+
+    <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+        <button type="button" id="btnGuardarPoste" class="btn btn-success" disabled>Guardar Poste</button>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Crear poste 
+        </div>
+        <div class="card-body">
+            <div id="map" style="height: 500px"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_GoogleMapsScriptsPartial");
+        await Html.RenderPartialAsync("_PostesControllerScriptsPartial");
+        await Html.RenderPartialAsync("_MufasControllerScriptsPartial");
+        await Html.RenderPartialAsync("_GponsControllerScriptsPartial");
+    }
+
+    <script>
+        let map;
+        let poste = {};
+        let marcadores = [];
+
+        async function initMap() {
+            const position = { lat: 13.924394865271614, lng: -89.849635478908 };
+            const { Map } = await google.maps.importLibrary("maps");
+
+            map = new Map(document.getElementById("map"), {
+                zoom: 15,
+                center: position,
+                mapId: "DEMO_MAP_ID",
+            });
+
+            const btnGuardarPoste = document.getElementById("btnGuardarPoste");
+
+            drawLinesCheckbox.addEventListener("change", () => {
+                drawEnabled = drawLinesCheckbox.checked;
+
+                if (drawEnabled) {
+                    drawLinesCheckboxLabel.innerHTML = "Dejar de agregar Postes"; // Cambiar el texto del botón
+                    btnGuardarPoste.disabled = true;
+                } else {
+                    //saveLastDrawnPolyline(); // Al desactivar, guardar la línea dibujada
+                    drawLinesCheckboxLabel.innerHTML = "Agregar Poste"; // Cambiar el texto del botón
+                    btnGuardarPoste.disabled = false;
+                }
+            });
+
+            btnGuardarPoste.addEventListener("click", async () => {
+                await showCreatePosteModal();
+            })
+
+            map.addListener("click", (e) => {
+                if (drawEnabled) {
+                    deleteAllMarkers()
+                    poste = e.latLng; // Agregar las coordenadas del punto a la matriz
+                    addPoste(poste);
+                }
+            });
+        }
+
+        function addPoste(location) {
+            const newPoste = new google.maps.Marker({
+                position: location,
+                map: map,
+                title: "Nuevo Punto",
+                icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            });
+
+            marcadores.push(newPoste);
+        }
+
+        function deleteAllMarkers() {
+            for (var i = 0; i < marcadores.length; i++) {
+                marcadores[i].setMap(null);
+            }
+
+            // Limpia el array de marcadores
+            marcadores = [];
+        }
+
+        async function showCreatePosteModal() {
+            const mufas = (await ObtenerMufas()).map((mufa) => `<option value="${mufa.id}">${mufa.nombre}</option>`).join();
+            const gpons = (await ObtenerGpons()).map((gpon) => `<option value="${gpon.id}">${gpon.nombre}</option>`).join();
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Datos del nuevo poste',
+                html:
+                    // Input del nombre del poste
+                    '<div class="form-floating mb-3">' +
+                    '<input type="text" class="form-control" id="poste-nombre" placeholder="Ingrese el nombre del poste" required>' +
+                    '<label for="floatingInput">Nombre Del Poste</label>' +
+                    '</div>' +
+                    // Select de mufas
+                    '<div class="form-floating mb-3">' +
+                    '  <select class="form-select" id="mufas-list" >' +
+                    '    <option value="" selected>-- No agregar aun --</option>' +
+                    mufas +
+                    '  </select>' +
+                    '  <label for="mufa-list">Seleccione mufa</label>' +
+                    '</div>'+
+                    // Select de GPONs
+                    '<div class="form-floating mb-3">' +
+                    '  <select class="form-select" id="gpons-list" >' +
+                    '    <option value="" selected>-- No agregar aun --</option>' +
+                    gpons +
+                    '  </select>' +
+                    '  <label for="gpons-list">Seleccione GPON</label>' +
+                    '</div>',
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: () => {
+                    return [
+                        document.getElementById('poste-nombre').value,
+                        document.getElementById('mufas-list').value,
+                        document.getElementById('gpons-list').value,
+                    ]
+                }
+            })
+
+            if (formValues) {
+                const posteToSend = {
+                    nombre: formValues[0],
+                    mufaId: formValues[1],
+                    gponId: formValues[2],
+                    longitud: poste.lng(),
+                    latitud: poste.lat()
+                };
+
+                await AgregarPoste(posteToSend);
+            }
+        }
+
+        initMap();
+    </script>
+}

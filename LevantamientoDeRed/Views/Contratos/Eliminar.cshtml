@@ -1,0 +1,87 @@
+﻿@using LevantamientoDeRed.Dto;
+@using Microsoft.AspNetCore.Identity;
+@model ContratoDto;
+
+@{
+    ViewData["Title"] = "Eliminar Servicio";
+}
+
+<div class="bg-secondary">
+    <div id="layoutAuthentication">
+        <div id="layoutAuthentication_content">
+            <main>
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-7">
+                            <div class="card shadow-lg border-0 rounded-lg mt-5 mb-5">
+                                <div class="card-header">
+                                    <h3 class="text-center font-weight-light my-4">Eliminar Contrato</h3>
+                                    @if (ViewData["error_mensaje_eliminar"] is not null)
+                                    {
+                                        <div class="alert alert-danger" role="alert">
+                                            <h4 class="alert-heading">Ocurri&oacute; un error</h4>
+                                            <p>@ViewData["error_mensaje_eliminar"]</p>
+                                            @if (ViewData["error_errors_eliminar"] is not null)
+                                            {
+                                                <hr>
+                                                <ul>
+                                                    @foreach (var item in ViewData["error_errors_eliminar"] as IEnumerable<IdentityError>)
+                                                    {
+                                                        <li class="mb-0">@item.Description</li>
+                                                    }
+                                                </ul>
+                                            }
+                                        </div>
+                                        <a asp-action="Index" asp-controller="Contratos">Volver</a>
+                                    }
+                                </div>
+                                <div class="card-body">
+                                    <div>
+                                        <dl class="row">
+                                            <dt class="col-sm-2">
+                                                @Html.DisplayNameFor(model => model.Nombre)
+                                            </dt>
+                                            <dd class="col-sm-10">
+                                                @Html.DisplayFor(model => model.Nombre)
+                                            </dd>
+                                            <dt class="col-sm-2">
+                                                @Html.DisplayNameFor(model => model.Descripcion)
+                                            </dt>
+                                            <dd class="col-sm-10">
+                                                @Html.DisplayFor(model => model.Descripcion)
+                                            </dd>
+                                            <dt class="col-sm-2">
+                                                @Html.DisplayNameFor(model => model.PrecioMensual)
+                                            </dt>
+                                            <dd class="col-sm-10">
+                                                @Html.DisplayFor(model => model.PrecioMensual)
+                                            </dd>
+                                            <dt class="col-sm-2">
+                                                @Html.DisplayNameFor(model => model.FechaInicio)
+                                            </dt>
+                                            <dd class="col-sm-10">
+                                                @Html.DisplayFor(model => model.FechaInicio)
+                                            </dd>
+                                            <dt class="col-sm-2">
+                                                @Html.DisplayNameFor(model => model.FechaFinal)
+                                            </dt>
+                                            <dd class="col-sm-10">
+                                                @Html.DisplayFor(model => model.FechaFinal)
+                                            </dd>
+                                        </dl>
+
+                                        <form asp-action="Eliminar" asp-controller="Contratos">
+                                            <input type="hidden" asp-for="Id" />
+                                            <input type="submit" value="Eliminar" class="btn btn-danger" />
+                                            <a asp-action="Index" asp-controller="Contratos" class="btn btn-secondary">Volver</a>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>

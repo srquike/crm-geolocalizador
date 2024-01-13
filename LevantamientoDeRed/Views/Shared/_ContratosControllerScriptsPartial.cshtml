@@ -1,0 +1,25 @@
+﻿<script>
+    const PORT_CONTRATOS = window.location.port !== "" ? `:${window.location.port}` : "";
+    const URL_BASE_CONTRATOS = `${window.location.protocol}//${window.location.hostname}${PORT_CONTRATOS}/api`;
+
+    async function obtenerContratosAsync() {
+        try {
+            const respuesta = await fetch(URL_BASE_CONTRATOS + "/contratos", {
+                method: "GET",
+            });
+
+            if (respuesta.ok) {
+                const resultados = await respuesta.json();
+                return resultados;
+            } else {
+                await Swal.fire(
+                    'Error',
+                    JSON.stringify(await respuesta.json()),
+                    'error'
+                )
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+</script>

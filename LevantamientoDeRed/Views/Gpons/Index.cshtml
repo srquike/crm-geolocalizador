@@ -1,0 +1,200 @@
+﻿@{
+    ViewData["Title"] = "Mapa de GPONs";
+}
+
+<div class="container-fluid px-4" style="display: grid">
+    <h1 class="mt-4">Mapa de GPONs</h1>
+
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li>
+        <li class="breadcrumb-item"><a href="/Postes">Postes</a></li>
+        <li class="breadcrumb-item active">Mapa de GPONs</li>
+    </ol>
+
+    @if (User.IsInRole("Administrador") || User.IsInRole("Jefe"))
+    {
+        <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+            <a asp-action="Crear" class="btn btn-success">Crear</a>
+            <button id="editarButtonElement" type="button" class="btn btn-info">Editar</button>
+
+            <button id="eliminarButtonElement" type="button" class="btn btn-danger">Eliminar</button>
+        </div>
+    }
+    else if (User.IsInRole("Tecnico"))
+    {
+        <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+            <a asp-action="Crear" class="btn btn-success">Crear</a>
+        </div>
+    }
+
+    <div class="form-floating mb-4">
+        <select id="selectElement" class="form-select">
+            <option selected value="0">Todos</option>
+        </select>
+        <label for="selectElement">Seleccionar</label>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Mapa de GPONs
+        </div>
+        <div class="card-body">
+            <div id="map" style="height: 500px"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_GoogleMapsScriptsPartial");
+        await Html.RenderPartialAsync("_PostesControllerScriptsPartial");
+        await Html.RenderPartialAsync("_GponsControllerScriptsPartial");
+    }
+
+    <script async>
+        let map;
+        let marcadores = [];
+
+        async function initMap() {
+            const position = { lat: 13.924394865271614, lng: -89.849635478908 };
+            const { Map } = await google.maps.importLibrary("maps");
+            const gpons = await ObtenerGpons();
+
+            map = new Map(document.getElementById("map"), {
+                zoom: 15,
+                center: position,
+                mapId: "DEMO_MAP_ID",
+            });
+
+            gpons.map((gpon) => {
+                draw(gpon)
+            });
+
+            rellenarElementoSelectGpons(gpons);
+
+            document.getElementById("selectElement").addEventListener("change", async () => {
+                const selectElement = document.getElementById("selectElement");
+
+                deleteAllMarkers();
+
+                if (selectElement.value === "0") {
+                    gpons.map((gpon) => {
+                        draw(gpon)
+                    });
+                } else {
+                    const fromApi = await obtenerGpon(selectElement.value);
+
+                    draw(fromApi);
+                }
+            });
+
+            document.getElementById("eliminarButtonElement").addEventListener("click", async () => {
+                const selectElement = document.getElementById("selectElement");
+                const URL_BASE = `${window.location.protocol}//${window.location.hostname}${PORT}/Gpons/Eliminar`;
+
+                if (selectElement.value !== "0") {
+                    window.location.href = URL_BASE + "/" + selectElement.value;
+                }
+                else {
+                    await Swal.fire(
+                        'Advertencia',
+                        'Debe seleccionar un GPON para realizar esta accion',
+                        'warning'
+                    )
+                }
+            });
+
+            document.getElementById("editarButtonElement").addEventListener("click", async () => {
+                const selectElement = document.getElementById("selectElement");
+
+                if (selectElement.value !== "0") {
+                    showEditModal(selectElement.value);
+                }
+                else {
+                    await Swal.fire(
+                        'Advertencia',
+                        'Debe seleccionar un GPON para realizar esta accion',
+                        'warning'
+                    )
+                }
+            });
+        }
+
+        function draw(gpon) {
+            const latLng = {
+                lat: gpon.latitud,
+                lng: gpon.longitud
+            };
+            const imageUrl = "\logo_gpon.png";
+            const newGpon = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                title: gpon.nombre,
+                icon: {
+                    url: imageUrl,
+                    scaledSize: new google.maps.Size(30, 30) // Ajusta el tamaño según tus necesidades
+                },
+            });
+            marcadores.push(newGpon);
+        }
+
+        // Elimina todos los marcadores cuando se llama
+        function deleteAllMarkers() {
+            for (var i = 0; i < marcadores.length; i++) {
+                marcadores[i].setMap(null);
+            }
+
+            // Limpia el array de marcadores
+            marcadores = [];
+        }
+
+        async function showEditModal(id) {
+            let toEdit = await obtenerGpon(id);
+
+            const postes = (await obtenerPostes()).map((poste) => {
+                if (poste.id === toEdit.posteId) {
+                    return `<option value="${poste.id}" selected>${poste.nombre}</option>`;
+                }
+
+                return `<option value="${poste.id}">${poste.nombre}</option>`;
+            }).join();
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Datos del GPON',
+                html:
+                    // Input del nombre
+                    '<div class="form-floating mb-3">' +
+                    `<input type="text" value="${toEdit.nombre}" class="form-control" id="gpon-nombre" placeholder="Ingrese el nombre de la mufa" required>` +
+                    '<label for="floatingInput">Nombre</label>' +
+                    '</div>' +
+                    // Select de tipos de mufas
+                    '<div class="form-floating mb-3">' +
+                    '  <select class="form-select" id="postes-list" required>' +
+                    '    <option value="">-- No asignar aun --</option>' +
+                    postes +
+                    '  </select>' +
+                    '  <label for="postes-list">Postes</label>' +
+                    '</div>' +
+                    `<input type="hidden" value="${toEdit.id}" class="form-control" id="mufa-id">`,
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: () => {
+                    return [
+                        document.getElementById('gpon-nombre').value,
+                        document.getElementById('postes-list').value,
+                    ]
+                }
+            })
+
+            if (formValues) {
+                toEdit.nombre = formValues[0];
+                toEdit.posteId = formValues[1];
+                await EditarGpon(toEdit)
+                location.reload(true);
+            }
+        }
+
+        initMap();
+    </script>
+}

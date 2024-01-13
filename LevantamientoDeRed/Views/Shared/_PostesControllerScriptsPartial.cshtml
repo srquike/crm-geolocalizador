@@ -1,0 +1,104 @@
+﻿<script>
+    const PORT = window.location.port !== "" ? `:${window.location.port}` : "";
+    const URL_BASE = `${window.location.protocol}//${window.location.hostname}${PORT}/api`;
+
+    async function AgregarPoste(posteToSend) {
+        try {
+            const respuesta = await fetch(URL_BASE + "/postes/crear", {
+                method: "POST",
+                body: JSON.stringify(posteToSend),
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            });
+
+            if (respuesta.ok) {
+                await Swal.fire(
+                    'Hecho!',
+                    'El nuevo poste fue creado con exito',
+                    'success'
+                )
+            } else {
+                await Swal.fire(
+                    'Error',
+                    JSON.stringify(await respuesta.json()),
+                    'error'
+                )
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function obtenerPostes() {
+        try {
+            const respuesta = await fetch(URL_BASE + "/postes", {
+                method: "GET",
+            });
+
+            if (respuesta.ok) {
+                const resultados = await respuesta.json();
+                return resultados;
+            } else {
+                window.alert("La solicitud para obtener la lista de postes no fue exitosa");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function obtenerPoste(posteId) {
+        try {
+            const response = await fetch(URL_BASE + "/postes/" + posteId, {
+                method: "GET",
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return result;
+            } 
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function EditarPoste(posteToSend) {
+        try {
+            const respuesta = await fetch(URL_BASE + "/postes/editar", {
+                method: "PUT",
+                body: JSON.stringify(posteToSend),
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            });
+
+            if (respuesta.ok) {
+                await Swal.fire(
+                    'Hecho!',
+                    'El nuevo poste fue editado con exito',
+                    'success'
+                )
+            } else {
+                await Swal.fire(
+                    'Error',
+                    JSON.stringify(await respuesta.json()),
+                    'error'
+                )
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function rellenarElementoSelect(postes) {
+        const selectElement = document.getElementById("postesSelectElement");
+
+        postes.map((poste, index) => {
+            const optionElement = document.createElement("option");
+            optionElement.value = poste.id;
+            optionElement.text = poste.nombre;
+            selectElement.appendChild(optionElement);
+        });
+    }
+
+</script>

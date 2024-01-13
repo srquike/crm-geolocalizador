@@ -1,0 +1,146 @@
+﻿@{
+    ViewData["Title"] = "Mapa de cables";
+}
+
+<div class="container-fluid px-4" style="display: grid">
+    <h1 class="mt-4">Mapa de cables</h1>
+
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li>
+        <li class="breadcrumb-item active">Mapa de cables</li>
+    </ol>
+
+    @if (User.IsInRole("Administrador")|| User.IsInRole("Jefe"))
+    {
+        <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+            <a asp-action="Crear" class="btn btn-success">Crear</a>
+            <button id="eliminarButtonElement" type="button" class="btn btn-danger">Eliminar</button>
+        </div>
+    }
+    else if (User.IsInRole("Tecnico"))
+    {
+        <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+            <a asp-action="Crear" class="btn btn-success">Crear</a>
+        </div>
+    }
+
+    <div class="form-floating mb-4">
+        <select id="cablesSelectElement" class="form-select">
+            <option selected value="0">Todos</option>
+        </select>
+        <label for="cablesSelectElement">Seleccionar</label>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Mapa de cables
+        </div>
+        <div class="card-body">
+            <div id="map" style="height: 500px"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_GoogleMapsScriptsPartial");
+        await Html.RenderPartialAsync("_CablesControllerScriptsPartial");
+    }
+
+    <script async>
+        let map;
+        const drawnPolylines = [];
+
+        async function initMap() {
+            const position = { lat: 13.924394865271614, lng: -89.849635478908 };
+            const { Map } = await google.maps.importLibrary("maps");
+            const cables = await obtenerCables();
+
+            map = new Map(document.getElementById("map"), {
+                zoom: 15,
+                center: position,
+                mapId: "DEMO_MAP_ID",
+            });
+
+            cables.map((cable) => {
+                drawCable(cable)
+            });
+
+            rellenarElementoSelect(cables);
+
+            document.getElementById("cablesSelectElement").addEventListener("change", async () => {
+                const selectElement = document.getElementById("cablesSelectElement");
+                deleteAllPolylines();
+
+                if (selectElement.value === "0") {
+                    cables.map((cable) => {
+                        drawCable(cable)
+                    });
+                } else {
+                    const cable = await obtenerCable();
+
+                    drawCable(cable);
+                }
+            });
+
+            document.getElementById("eliminarButtonElement").addEventListener("click", async () => {
+                const selectElement = document.getElementById("cablesSelectElement");
+                const URL_BASE = `${window.location.protocol}//${window.location.hostname}${PORT}/Cables/Eliminar`;
+
+                if (selectElement.value !== "0") {
+                    window.location.href = URL_BASE + "/" + selectElement.value;
+                }
+                else {
+                    await Swal.fire(
+                        'Advertencia',
+                        'Debe seleccionar un cable para realizar esta accion',
+                        'warning'
+                    )
+                }
+            })
+        }
+
+        function drawCable(cable) {
+            const coordinates = [];
+            
+            cable.puntos.map((punto) => {
+                coordinates.push({
+                    lat: punto.latitud,
+                    lng: punto.longitud
+                });
+            });
+
+            drawPolyline(coordinates, cable.tipo);
+        }
+
+        function drawPolyline(lineCoordinates, color ) {
+            const newPolyline = new google.maps.Polyline({
+                path: lineCoordinates,
+                geodesic: true,
+                strokeColor: color,
+                strokeOpacity: 1.0,
+                strokeWeight: 2,
+                map: map
+            });
+
+            drawnPolylines.push(newPolyline);
+
+            console.log(lineCoordinates);
+        }
+
+        function deleteAllPolylines() {
+            const count = drawnPolylines.length;
+
+            if (count > 0) {
+
+                for (let i = 0; i < count; i++) {
+                    const polyline = drawnPolylines.pop()
+                    polyline.setMap(null);
+                }
+            }
+        }
+
+        initMap();
+    </script>
+}

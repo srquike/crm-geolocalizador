@@ -1,0 +1,68 @@
+﻿@using LevantamientoDeRed.Dto;
+@model List<UsuarioDto>
+
+@{
+    ViewData["Title"] = "Listado de usuarios";
+    var contador = 0;
+}
+
+<div class="container-fluid px-4">    
+    <h1 class="mt-4">Usuarios</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li>
+        <li class="breadcrumb-item active">Usuarios</li>
+    </ol>
+    <a asp-action="Registrar" asp-controller="Usuarios" class="btn btn-primary mb-3">Crear nuevo</a>
+    @if (ViewData["error_mensaje_listado_usuarios"] is not null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Ocurri&oacute; un error</h4>
+            <p>@ViewData["error_mensaje_listado_usuarios"]</p>
+        </div>
+    }
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Registros
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table" id="datatablesUsuarios">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Correo electr&oacute;nico</th>
+                        <th>N&uacute;mero de DUI</th>
+                        <th>Rol</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@(++contador)</td>
+                            <td>@item.Nombre</td>
+                            <td>@item.Email</td>
+                            <td>@item.UserName</td>
+                            <td>@item.Rol</td>
+                            <td class="d-md-block">
+                                <div class="d-flex gap-2">
+                                        <a asp-action="Editar" asp-controller="Usuarios" asp-route-id="@item.Id" class="btn btn-info">Editar</a>
+                                        <a asp-action="Eliminar" asp-controller="Usuarios" asp-route-id="@item.Id" class="btn btn-danger">Eliminar</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/ListaUsuariosDatatable.js"></script>
+}
+

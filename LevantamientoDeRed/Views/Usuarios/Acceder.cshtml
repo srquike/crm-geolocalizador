@@ -1,0 +1,56 @@
+﻿@using LevantamientoDeRed.Dto;
+@model AccederUsuarioDto
+
+@{
+    ViewData["Title"] = "Acceder";
+}
+
+<div class="bg-secondary">
+    <div id="layoutAuthentication">
+        <div id="layoutAuthentication_content">
+            <main>
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-5">
+                            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                <div class="card-header">
+                                    <h3 class="text-center font-weight-light my-4">Iniciar sesi&oacute;n</h3>
+                                    @if (ViewData["error_mensaje_acceder"] is not null)
+                                    {
+                                        <div class="alert alert-danger" role="alert">
+                                            <h4 class="alert-heading">Ocurri&oacute; un error</h4>
+                                            <p>@ViewData["error_mensaje_acceder"]</p>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="card-body">
+                                    <form asp-action="Acceder" asp-controller="Usuarios">
+                                        <div class="form-floating mb-3">
+                                            <input asp-for="NumeroDui" maxlength="9" class="form-control" id="inputEmail" type="text" placeholder="123456789" />
+                                            <label asp-for="NumeroDui">N&uacute;mero de DUI (sin gui&oacute;n)</label>
+                                            <span asp-validation-for="NumeroDui" class="text-danger"></span>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input asp-for="Clave" maxlength="10" class="form-control" id="inputPassword" type="password" placeholder="contrase&ntilde;a" />
+                                            <label asp-for="Clave">Contrase&ntilde;a</label>
+                                            <span asp-validation-for="Clave" class="text-danger"></span>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                            <input type="submit" class="btn btn-primary" value="Acceder" />
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

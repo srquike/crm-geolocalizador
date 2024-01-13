@@ -1,0 +1,35 @@
+﻿<script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", () => {
+        const serviciosSelectElement = document.getElementById("ServicioId");
+        const cargandoOptionElement = document.createElement("option");
+        const port = window.location.port !== "" ? `:${window.location.port}` : "";
+        const url = `${window.location.protocol}//${window.location.hostname}${port}/Servicios/ServiciosObtener`;
+        cargandoOptionElement.value = "";
+        cargandoOptionElement.text = "-- cargando --";
+        serviciosSelectElement.appendChild(cargandoOptionElement);
+
+        fetch(url)
+            .then((respuesta) => {
+                if (respuesta.ok) {
+                    return respuesta.json();
+                }
+            })
+            .then((servicios) => {
+                if (servicios.length !== 0) {
+                    servicios.map((servicio) => {
+                        const servicioOptionElement = document.createElement("option");
+                        servicioOptionElement.value = servicio.id;
+                        servicioOptionElement.text = servicio.nombre;
+                        servicioOptionElement.selected = true;
+                        serviciosSelectElement.appendChild(servicioOptionElement);
+                    });
+                } else {
+                    const vacioOptionElement = document.createElement("option");
+                    vacioOptionElement.value = "";
+                    vacioOptionElement.text = "-- no hay servicios --";
+                    vacioOptionElement.selected = true;
+                    serviciosSelectElement.appendChild(vacioOptionElement);
+                }
+            });
+    });
+</script>

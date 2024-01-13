@@ -1,0 +1,155 @@
+﻿@{
+    ViewData["Title"] = "Crear mufa";
+}
+
+<div class="container-fluid px-4" style="display: grid">
+    <h1 class="mt-4">Crear mufa</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li>
+        <li class="breadcrumb-item"><a href="/Postes">Postes</a></li>
+        <li class="breadcrumb-item"><a href="/Mufas">Mufas</a></li>
+        <li class="breadcrumb-item active">Crear mufa</li>
+    </ol>
+    @* <div class="btn-group mb-4" role="group">
+        <input type="checkbox" class="btn-check" id="drawLinesCheckbox" autocomplete="off">
+        <label class="btn btn-outline-primary" for="drawLinesCheckbox" id="drawLinesCheckboxLabel">Agregar</label>
+    </div> *@
+    <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+        <button type="button" id="btnGuardarMufa" class="btn btn-success" onclick="showCreateModal()">Guardar</button>
+    </div>
+
+    @* <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Mapa de mufas
+        </div>
+        <div class="card-body">
+            <div id="map" style="height: 500px"></div>
+        </div>
+    </div> *@
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_GoogleMapsScriptsPartial");
+        await Html.RenderPartialAsync("_MufasControllerScriptsPartial");
+        await Html.RenderPartialAsync("_GponsControllerScriptsPartial");
+        await Html.RenderPartialAsync("_PostesControllerScriptsPartial");
+    }
+
+    <script>
+        let map;
+        let poste = {};
+
+        async function initMap() {
+            const position = { lat: 13.924394865271614, lng: -89.849635478908 };
+            const { Map } = await google.maps.importLibrary("maps");
+
+            map = new Map(document.getElementById("map"), {
+                zoom: 15,
+                center: position,
+                mapId: "DEMO_MAP_ID",
+            });
+
+            const btnGuardarMufa = document.getElementById("btnGuardarMufa");
+
+            drawLinesCheckbox.addEventListener("change", () => {
+                drawEnabled = drawLinesCheckbox.checked;
+
+                if (drawEnabled) {
+                    drawLinesCheckboxLabel.innerHTML = "Dejar de agregar mufa"; // Cambiar el texto del botón
+                    btnGuardarMufa.disabled = true;
+                } else {
+                    //saveLastDrawnPolyline(); // Al desactivar, guardar la línea dibujada
+                    drawLinesCheckboxLabel.innerHTML = "Agregar mufa"; // Cambiar el texto del botón
+                    btnGuardarMufa.disabled = false;
+                }
+            });
+
+            btnGuardarMufa.addEventListener("click", async () => {
+                await showCreateModal();
+            })
+
+            map.addListener("click", (e) => {
+                if (drawEnabled) {
+                    poste = e.latLng; // Agregar las coordenadas del punto a la matriz
+                    addPoste(e.latLng);
+                    console.log(e.latLng.toJSON())// Mostrar las coordenadas en la consola
+                }
+            });
+        }
+
+        function addPoste(location) {
+            const newPoste = new google.maps.Marker({
+                position: location,
+                map: map,
+                title: "Nuevo Punto",
+                icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            });
+        }
+
+        async function showCreateModal() {
+            const gpons = (await ObtenerGpons()).map((gpon) => `<option value="${gpon.id}">${gpon.nombre}</option>`).join();
+            const postes = (await obtenerPostes()).map((poste) => `<option value="${poste.id}">${poste.nombre}</option>`).join();
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Datos de la nueva mufa',
+                html:
+                    // Input del nombre
+                    '<div class="form-floating mb-3">' +
+                    '<input type="text" class="form-control" id="mufa-nombre" placeholder="Ingrese el nombre de la mufa" required>' +
+                    '<label for="floatingInput">Nombre</label>' +
+                    '</div>' +
+                    // Select de tipos de mufas                 
+                    '<div class="form-floating mb-3">' +
+                    '  <select class="form-select" id="mufas-tipo" required>' +
+                    '    <option value="clientes">Clientes</option>' +
+                    '    <option value="Reparación">Reparaci&oacute;n</option>' +
+                    '    <option value="Derivación">Derivaci&oacute;n</option>' +
+                    '    <option value="Distribución">Distribuci&oacute;n</option>' +
+                    '  </select>' +
+                    '  <label for="cliente-estado">Tipo</label>' +
+                    '</div>' +
+                    // Select de GPONs
+                    '<div class="form-floating mb-3">' +
+                    '  <select class="form-select" id="gpons" required>' +
+                    '    <option value="">-- No asignar aun --</option>' +
+                    gpons +
+                    '  </select>' +
+                    '  <label for="cliente-estado">GPON</label>' +
+                    '</div>' +
+                    // Select de Postes
+                    '<div class="form-floating mb-3">' +
+                    '  <select class="form-select" id="postes" required>' +
+                    '    <option value="">-- No asignar aun --</option>' +
+                    postes +
+                    '  </select>' +
+                    '  <label for="cliente-estado">Poste</label>' +
+                    '</div>',
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: () => {
+                    return [
+                        document.getElementById('mufa-nombre').value,
+                        document.getElementById('mufas-tipo').value,
+                        document.getElementById('gpons').value,
+                        document.getElementById('postes').value                        
+                    ]
+                }
+            })
+
+            if (formValues) {
+                const toSend = {
+                    nombre: formValues[0],
+                    tipo: formValues[1],                    
+                    gponId: formValues[2],
+                    posteId: formValues[3]
+                };
+
+                await AgregarMufa(toSend)
+            } 
+        }
+
+        //initMap();
+    </script>
+}

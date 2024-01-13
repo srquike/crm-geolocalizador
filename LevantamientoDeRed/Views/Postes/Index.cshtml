@@ -1,0 +1,236 @@
+﻿@{
+    ViewData["Title"] = "Mapa de postes";
+}
+
+<div class="container-fluid px-4" style="display: grid">
+    <h1 class="mt-4">Mapa de postes</h1>
+
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Tablero</a></li>
+        <li class="breadcrumb-item active">Mapa de postes</li>
+    </ol>
+
+    @if (User.IsInRole("Administrador") || User.IsInRole("Jefe"))
+    {
+        <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+            <a asp-action="Crear" class="btn btn-success">Crear</a>
+            <button id="editarButtonElement" type="button" class="btn btn-info">Editar</button>
+
+            <button id="eliminarButtonElement" type="button" class="btn btn-danger">Eliminar</button>
+        </div>
+    }
+    else if (User.IsInRole("Tecnico"))
+    {
+        <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+            <a asp-action="Crear" class="btn btn-success">Crear</a>
+        </div>
+    }
+    <div class="btn-group mb-4" role="group" aria-label="Basic mixed styles example">
+        <a href="/Mufas" class="btn btn-warning">Ver Mufas</a>
+        <a href="/Gpons" class="btn btn-secondary">Ver G-pons</a>
+
+    </div>
+
+    <div class="form-floating mb-4">
+        <select id="postesSelectElement" class="form-select">
+            <option selected value="0">Todos</option>
+        </select>
+        <label for="postesSelectElement">Seleccionar</label>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Mapa de postes
+        </div>
+        <div class="card-body">
+            <div id="map" style="height: 500px"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_GoogleMapsScriptsPartial");
+        await Html.RenderPartialAsync("_PostesControllerScriptsPartial");
+        await Html.RenderPartialAsync("_MufasControllerScriptsPartial");
+        await Html.RenderPartialAsync("_GponsControllerScriptsPartial");
+    }
+
+    <script async>
+        let map;
+        let marcadores = [];
+
+        async function initMap() {
+            const position = { lat: 13.924394865271614, lng: -89.849635478908 };
+            const { Map } = await google.maps.importLibrary("maps");
+            const postes = await obtenerPostes();
+
+            map = new Map(document.getElementById("map"), {
+                zoom: 15,
+                center: position,
+                mapId: "DEMO_MAP_ID",
+            });
+
+            postes.map((poste) => {
+                drawPoste(poste)
+            });
+
+            rellenarElementoSelect(postes);
+
+            document.getElementById("postesSelectElement").addEventListener("change", async () => {
+                const selectElement = document.getElementById("postesSelectElement");
+                //eliminar todos cuando se selecciona 1
+                deleteAllMarkers();
+
+                if (selectElement.value === "0") {
+                    postes.map((poste) => {
+                        drawPoste(poste)
+                    });
+                } else {
+                    const posteFromApi = await obtenerPoste(selectElement.value);
+
+                    drawPoste(posteFromApi);
+                }
+            });
+
+            document.getElementById("eliminarButtonElement").addEventListener("click", async () => {
+                const selectElement = document.getElementById("postesSelectElement");
+                const URL_BASE = `${window.location.protocol}//${window.location.hostname}${PORT}/Postes/Eliminar`;
+
+                if (selectElement.value !== "0") {
+                    window.location.href = URL_BASE + "/" + selectElement.value;
+                }
+                else {
+                    await Swal.fire(
+                        'Advertencia',
+                        'Debe seleccionar un poste para realizar esta accion',
+                        'warning'
+                    )
+                }
+            });
+
+            document.getElementById("editarButtonElement").addEventListener("click", async () => {
+                const selectElement = document.getElementById("postesSelectElement");
+
+
+                if (selectElement.value !== "0") {
+                    showEditPosteModal(selectElement.value);
+                }
+                else {
+                    await Swal.fire(
+                        'Advertencia',
+                        'Debe seleccionar un poste para realizar esta accion',
+                        'warning'
+                    )
+                }
+            });
+        }
+
+        function drawPoste(poste) {
+            const latLng = {
+                lat: poste.latitud,
+                lng: poste.longitud
+            };
+            const imageUrl = "\logo_poste.png";
+            const newPoste = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                title: poste.nombre,
+                icon: {
+                    url: imageUrl,
+                    scaledSize: new google.maps.Size(60, 60) // Ajusta el tamaño según tus necesidades
+                },
+            });
+            marcadores.push(newPoste);
+        }
+
+        // Elimina todos los marcadores cuando se llama
+        function deleteAllMarkers() {
+            for (var i = 0; i < marcadores.length; i++) {
+                marcadores[i].setMap(null);
+            }
+
+            // Limpia el array de marcadores
+            marcadores = [];
+        }
+
+
+        async function showEditPosteModal(posteId) {
+            let posteToEdit = await obtenerPoste(posteId);
+
+            if (posteToEdit === null) {
+                await Swal.fire(
+                    'Error',
+                    'Los datos del poste no existen o no estan disponibles',
+                    'error'
+                )
+
+                return;
+            }
+
+            const mufas = (await ObtenerMufas()).map((mufa) => {
+                if (mufa.id === posteToEdit.mufaId) {
+                    return `<option value="${mufa.id}" selected>${mufa.nombre}</option>`;
+                }
+
+                return `<option value="${mufa.id}">${mufa.nombre}</option>`;
+
+            }).join();
+
+            const gpons = (await ObtenerGpons()).map((gpon) => {
+                if (gpon.id === posteToEdit.gponId) {
+                    return `<option value="${gpon.id}" selected>${gpon.nombre}</option>`;
+                }
+
+                return `<option value="${gpon.id}">${gpon.nombre}</option>`;
+            }).join();
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Datos del poste',
+                html:
+                    // Input del nombre del poste
+                    '<div class="form-floating mb-3">' +
+                    `<input type="text" value="${posteToEdit.nombre}" class="form-control" id="poste-nombre" placeholder="Ingrese el nombre del poste" required>` +
+                    '<label for="floatingInput">Nombre Del Poste</label>' +
+                    '</div>' +
+                    // Select de mufas
+                    '<div class="form-floating mb-3">' +
+                    `  <select class="form-select" id="mufas-list">` +
+                    '    <option value="">-- No agregar aun --</option>' +
+                    mufas +
+                    '  </select>' +
+                    '  <label for="mufa-list">Seleccione mufa</label>' +
+                    '</div>' +
+                    // Select de GPONs
+                    '<div class="form-floating mb-3">' +
+                    `  <select class="form-select" id="gpons-list">` +
+                    '    <option value="">-- No agregar aun --</option>' +
+                    gpons +
+                    '  </select>' +
+                    '  <label for="gpons-list">Seleccione GPON</label>' +
+                    '</div>',
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: () => {
+                    return [
+                        document.getElementById('poste-nombre').value,
+                        document.getElementById('mufas-list').value,
+                        document.getElementById('gpons-list').value,
+                    ]
+                }
+            })
+
+            if (formValues) {
+
+                posteToEdit.nombre = formValues[0];
+                posteToEdit.mufaId = formValues[1];
+                posteToEdit.gponId = formValues[2];
+
+                await EditarPoste(posteToEdit);
+            }
+        }
+
+        initMap();
+    </script>
+}

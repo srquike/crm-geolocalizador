@@ -1,0 +1,89 @@
+﻿<script>
+    const PORT_CABLES = window.location.port !== "" ? `:${window.location.port}` : "";
+    const URL_BASE_CABLES = `${window.location.protocol}//${window.location.hostname}${PORT_CABLES}/api`;
+    
+    async function AgregarCable(lineCoordinates, color, nombre) {
+        const puntos = lineCoordinates.map((coordenada, index) => ({
+            longitud: coordenada.lng(),
+            latitud: coordenada.lat(),
+            order: index
+        }));
+
+        const cable = {
+            tipo: color,
+            estado: nombre,
+            puntos: puntos
+        };
+
+        try {
+            const respuesta = await fetch(URL_BASE_CABLES + "/cables/crear", {
+                method: "POST",
+                body: JSON.stringify(cable),
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            });
+
+            if (respuesta.ok) {
+                await Swal.fire(
+                    'Hecho!',
+                    'El nuevo cable fue creado con exito',
+                    'success'
+                )
+            } else {
+                await Swal.fire(
+                    'Error',
+                    JSON.stringify(await respuesta.json()),
+                    'error'
+                )
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function obtenerCables() {
+        try {
+            const respuesta = await fetch(URL_BASE_CABLES + "/cables", {
+                method: "GET",
+            });
+
+            if (respuesta.ok) {
+                const resultados = await respuesta.json();
+                return resultados;
+            } else {
+                window.alert("La solicitud para obtener la lista de cables no fue exitosa");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function obtenerCable() {
+        try {
+            const selectElement = document.getElementById("cablesSelectElement");
+            const cableId = selectElement.value;
+            const response = await fetch(URL_BASE_CABLES + "/cables/" + cableId);
+
+            if (response.ok) {
+                const result = await response.json();
+                return result;
+            } else {
+                window.alert("La solicitud para obtener el cable no fue exitosa");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function rellenarElementoSelect(cables) {
+        const selectElement = document.getElementById("cablesSelectElement");
+
+        cables.map((cable, index) => {
+            const optionElement = document.createElement("option");
+            optionElement.value = cable.id;
+            optionElement.text = cable.estado;
+            selectElement.appendChild(optionElement);
+        });
+    }
+</script>
