@@ -3,8 +3,6 @@
 
 @{
     ViewData["Title"] = "Acceder";
-    Model.NumeroDui = "111111111";
-    Model.Clave = "invitado123";
 }
 
 <div class="bg-secondary">
@@ -28,12 +26,12 @@
                                 <div class="card-body">
                                     <form asp-action="Acceder" asp-controller="Usuarios">
                                         <div class="form-floating mb-3">
-                                            <input asp-for="NumeroDui" maxlength="9" class="form-control" id="inputEmail" type="text" placeholder="123456789" />
+                                            <input value="111111111" asp-for="NumeroDui" maxlength="9" class="form-control" id="inputEmail" type="text" placeholder="123456789" />
                                             <label asp-for="NumeroDui">N&uacute;mero de DUI (sin gui&oacute;n)</label>
                                             <span asp-validation-for="NumeroDui" class="text-danger"></span>
                                         </div>
                                         <div class="form-floating mb-3">
-                                            <input asp-for="Clave" maxlength="10" class="form-control" id="inputPassword" type="password" placeholder="contrase&ntilde;a" />
+                                            <input value="invitado123" asp-for="Clave" maxlength="10" class="form-control" id="inputPassword" type="password" placeholder="contrase&ntilde;a" />
                                             <label asp-for="Clave">Contrase&ntilde;a</label>
                                             <span asp-validation-for="Clave" class="text-danger"></span>
                                         </div>
