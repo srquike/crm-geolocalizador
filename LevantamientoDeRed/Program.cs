@@ -200,7 +200,7 @@ internal class InicializadorDatos
     private static async Task SembrarUsuario(UserManager<Usuario>? userManager)
     {
         var usuarioBuscado = await userManager.FindByNameAsync("000000000");
-
+        
         if (usuarioBuscado is null)
         {
             var nuevoUsuario = new Usuario()
@@ -219,6 +219,30 @@ internal class InicializadorDatos
                 if (resultadoRol.Succeeded)
                 {
                     await userManager.AddClaimAsync(nuevoUsuario, new Claim(ClaimTypes.Actor, "Administrador"));
+                }
+            }
+        }
+        
+        var usuarioBuscado2 = await userManager.FindByNameAsync("111111111");
+
+        if (usuarioBuscado2 is null)
+        {
+            var nuevoUsuario = new Usuario()
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = "111111111",
+                Nombre = "Invitado"
+            };
+
+            var resultado = await userManager.CreateAsync(nuevoUsuario, "invitado123");
+
+            if (resultado.Succeeded)
+            {
+                var resultadoRol = await userManager.AddToRoleAsync(nuevoUsuario, "Visitante");
+
+                if (resultadoRol.Succeeded)
+                {
+                    await userManager.AddClaimAsync(nuevoUsuario, new Claim(ClaimTypes.Actor, "Invitado"));
                 }
             }
         }
